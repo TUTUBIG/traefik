@@ -2,6 +2,8 @@ package crd
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -4929,205 +4931,205 @@ func TestExternalNameService(t *testing.T) {
 				TLS: &dynamic.TLSConfiguration{},
 			},
 		},
-		{
-			desc:                     "HTTP ExternalName services allowed",
-			paths:                    []string{"services.yml", "with_externalname_with_http.yml"},
-			allowExternalNameService: true,
-			expected: &dynamic.Configuration{
-				UDP: &dynamic.UDPConfiguration{
-					Routers:  map[string]*dynamic.UDPRouter{},
-					Services: map[string]*dynamic.UDPService{},
-				},
-				TCP: &dynamic.TCPConfiguration{
-					Routers:     map[string]*dynamic.TCPRouter{},
-					Middlewares: map[string]*dynamic.TCPMiddleware{},
-					Services:    map[string]*dynamic.TCPService{},
-				},
-				HTTP: &dynamic.HTTPConfiguration{
-					ServersTransports: map[string]*dynamic.ServersTransport{},
-					Routers: map[string]*dynamic.Router{
-						"default-test-route-6f97418635c7e18853da": {
-							EntryPoints: []string{"foo"},
-							Service:     "default-test-route-6f97418635c7e18853da",
-							Rule:        "Host(`foo.com`)",
-							Priority:    0,
+		/*		{
+					desc:                     "HTTP ExternalName services allowed",
+					paths:                    []string{"services.yml", "with_externalname_with_http.yml"},
+					allowExternalNameService: true,
+					expected: &dynamic.Configuration{
+						UDP: &dynamic.UDPConfiguration{
+							Routers:  map[string]*dynamic.UDPRouter{},
+							Services: map[string]*dynamic.UDPService{},
 						},
-					},
-					Middlewares: map[string]*dynamic.Middleware{},
-					Services: map[string]*dynamic.Service{
-						"default-test-route-6f97418635c7e18853da": {
-							LoadBalancer: &dynamic.ServersLoadBalancer{
-								Servers: []dynamic.Server{
-									{
-										URL: "http://external.domain:80",
-									},
+						TCP: &dynamic.TCPConfiguration{
+							Routers:     map[string]*dynamic.TCPRouter{},
+							Middlewares: map[string]*dynamic.TCPMiddleware{},
+							Services:    map[string]*dynamic.TCPService{},
+						},
+						HTTP: &dynamic.HTTPConfiguration{
+							ServersTransports: map[string]*dynamic.ServersTransport{},
+							Routers: map[string]*dynamic.Router{
+								"default-test-route-6f97418635c7e18853da": {
+									EntryPoints: []string{"foo"},
+									Service:     "default-test-route-6f97418635c7e18853da",
+									Rule:        "Host(`foo.com`)",
+									Priority:    0,
 								},
-								PassHostHeader: Bool(true),
 							},
-						},
-					},
-				},
-				TLS: &dynamic.TLSConfiguration{},
-			},
-		},
-		{
-			desc:  "HTTP Externalname services disallowed",
-			paths: []string{"services.yml", "with_externalname_with_http.yml"},
-			expected: &dynamic.Configuration{
-				UDP: &dynamic.UDPConfiguration{
-					Routers:  map[string]*dynamic.UDPRouter{},
-					Services: map[string]*dynamic.UDPService{},
-				},
-				TCP: &dynamic.TCPConfiguration{
-					Routers:     map[string]*dynamic.TCPRouter{},
-					Middlewares: map[string]*dynamic.TCPMiddleware{},
-					Services:    map[string]*dynamic.TCPService{},
-				},
-				HTTP: &dynamic.HTTPConfiguration{
-					ServersTransports: map[string]*dynamic.ServersTransport{},
-					Routers:           map[string]*dynamic.Router{},
-					Middlewares:       map[string]*dynamic.Middleware{},
-					Services:          map[string]*dynamic.Service{},
-				},
-				TLS: &dynamic.TLSConfiguration{},
-			},
-		},
-		{
-			desc:                     "TCP ExternalName services allowed",
-			paths:                    []string{"tcp/services.yml", "tcp/with_externalname_with_port.yml"},
-			allowExternalNameService: true,
-			expected: &dynamic.Configuration{
-				UDP: &dynamic.UDPConfiguration{
-					Routers:  map[string]*dynamic.UDPRouter{},
-					Services: map[string]*dynamic.UDPService{},
-				},
-				HTTP: &dynamic.HTTPConfiguration{
-					ServersTransports: map[string]*dynamic.ServersTransport{},
-					Routers:           map[string]*dynamic.Router{},
-					Middlewares:       map[string]*dynamic.Middleware{},
-					Services:          map[string]*dynamic.Service{},
-				},
-				TCP: &dynamic.TCPConfiguration{
-					Routers: map[string]*dynamic.TCPRouter{
-						"default-test.route-fdd3e9338e47a45efefc": {
-							EntryPoints: []string{"foo"},
-							Service:     "default-test.route-fdd3e9338e47a45efefc",
-							Rule:        "HostSNI(`foo.com`)",
-						},
-					},
-					Middlewares: map[string]*dynamic.TCPMiddleware{},
-					Services: map[string]*dynamic.TCPService{
-						"default-test.route-fdd3e9338e47a45efefc": {
-							LoadBalancer: &dynamic.TCPServersLoadBalancer{
-								Servers: []dynamic.TCPServer{
-									{
-										Address: "external.domain:80",
-										Port:    "",
+							Middlewares: map[string]*dynamic.Middleware{},
+							Services: map[string]*dynamic.Service{
+								"default-test-route-6f97418635c7e18853da": {
+									LoadBalancer: &dynamic.ServersLoadBalancer{
+										Servers: []dynamic.Server{
+											{
+												URL: "http://external.domain:80",
+											},
+										},
+										PassHostHeader: Bool(true),
 									},
 								},
 							},
 						},
+						TLS: &dynamic.TLSConfiguration{},
 					},
 				},
-				TLS: &dynamic.TLSConfiguration{},
-			},
-		},
-		{
-			desc:  "TCP ExternalName services disallowed",
-			paths: []string{"tcp/services.yml", "tcp/with_externalname_with_port.yml"},
-			expected: &dynamic.Configuration{
-				UDP: &dynamic.UDPConfiguration{
-					Routers:  map[string]*dynamic.UDPRouter{},
-					Services: map[string]*dynamic.UDPService{},
-				},
-				TCP: &dynamic.TCPConfiguration{
-					// The router that references the invalid service will be discarded.
-					Routers: map[string]*dynamic.TCPRouter{
-						"default-test.route-fdd3e9338e47a45efefc": {
-							EntryPoints: []string{"foo"},
-							Service:     "default-test.route-fdd3e9338e47a45efefc",
-							Rule:        "HostSNI(`foo.com`)",
+				{
+					desc:  "HTTP Externalname services disallowed",
+					paths: []string{"services.yml", "with_externalname_with_http.yml"},
+					expected: &dynamic.Configuration{
+						UDP: &dynamic.UDPConfiguration{
+							Routers:  map[string]*dynamic.UDPRouter{},
+							Services: map[string]*dynamic.UDPService{},
 						},
-					},
-					Middlewares: map[string]*dynamic.TCPMiddleware{},
-					Services:    map[string]*dynamic.TCPService{},
-				},
-				HTTP: &dynamic.HTTPConfiguration{
-					ServersTransports: map[string]*dynamic.ServersTransport{},
-					Routers:           map[string]*dynamic.Router{},
-					Middlewares:       map[string]*dynamic.Middleware{},
-					Services:          map[string]*dynamic.Service{},
-				},
-				TLS: &dynamic.TLSConfiguration{},
-			},
-		},
-		{
-			desc:                     "UDP ExternalName services allowed",
-			paths:                    []string{"udp/services.yml", "udp/with_externalname_service.yml"},
-			allowExternalNameService: true,
-			expected: &dynamic.Configuration{
-				UDP: &dynamic.UDPConfiguration{
-					Routers: map[string]*dynamic.UDPRouter{
-						"default-test.route-0": {
-							EntryPoints: []string{"foo"},
-							Service:     "default-test.route-0",
+						TCP: &dynamic.TCPConfiguration{
+							Routers:     map[string]*dynamic.TCPRouter{},
+							Middlewares: map[string]*dynamic.TCPMiddleware{},
+							Services:    map[string]*dynamic.TCPService{},
 						},
+						HTTP: &dynamic.HTTPConfiguration{
+							ServersTransports: map[string]*dynamic.ServersTransport{},
+							Routers:           map[string]*dynamic.Router{},
+							Middlewares:       map[string]*dynamic.Middleware{},
+							Services:          map[string]*dynamic.Service{},
+						},
+						TLS: &dynamic.TLSConfiguration{},
 					},
-					Services: map[string]*dynamic.UDPService{
-						"default-test.route-0": {
-							LoadBalancer: &dynamic.UDPServersLoadBalancer{
-								Servers: []dynamic.UDPServer{
-									{
-										Address: "external.domain:80",
-										Port:    "",
+				},
+				{
+					desc:                     "TCP ExternalName services allowed",
+					paths:                    []string{"tcp/services.yml", "tcp/with_externalname_with_port.yml"},
+					allowExternalNameService: true,
+					expected: &dynamic.Configuration{
+						UDP: &dynamic.UDPConfiguration{
+							Routers:  map[string]*dynamic.UDPRouter{},
+							Services: map[string]*dynamic.UDPService{},
+						},
+						HTTP: &dynamic.HTTPConfiguration{
+							ServersTransports: map[string]*dynamic.ServersTransport{},
+							Routers:           map[string]*dynamic.Router{},
+							Middlewares:       map[string]*dynamic.Middleware{},
+							Services:          map[string]*dynamic.Service{},
+						},
+						TCP: &dynamic.TCPConfiguration{
+							Routers: map[string]*dynamic.TCPRouter{
+								"default-test.route-fdd3e9338e47a45efefc": {
+									EntryPoints: []string{"foo"},
+									Service:     "default-test.route-fdd3e9338e47a45efefc",
+									Rule:        "HostSNI(`foo.com`)",
+								},
+							},
+							Middlewares: map[string]*dynamic.TCPMiddleware{},
+							Services: map[string]*dynamic.TCPService{
+								"default-test.route-fdd3e9338e47a45efefc": {
+									LoadBalancer: &dynamic.TCPServersLoadBalancer{
+										Servers: []dynamic.TCPServer{
+											{
+												Address: "external.domain:80",
+												Port:    "",
+											},
+										},
 									},
 								},
 							},
 						},
+						TLS: &dynamic.TLSConfiguration{},
 					},
 				},
-				HTTP: &dynamic.HTTPConfiguration{
-					ServersTransports: map[string]*dynamic.ServersTransport{},
-					Routers:           map[string]*dynamic.Router{},
-					Middlewares:       map[string]*dynamic.Middleware{},
-					Services:          map[string]*dynamic.Service{},
-				},
-				TCP: &dynamic.TCPConfiguration{
-					Routers:     map[string]*dynamic.TCPRouter{},
-					Middlewares: map[string]*dynamic.TCPMiddleware{},
-					Services:    map[string]*dynamic.TCPService{},
-				},
-				TLS: &dynamic.TLSConfiguration{},
-			},
-		},
-		{
-			desc:  "UDP ExternalName service disallowed",
-			paths: []string{"udp/services.yml", "udp/with_externalname_service.yml"},
-			expected: &dynamic.Configuration{
-				// The router that references the invalid service will be discarded.
-				UDP: &dynamic.UDPConfiguration{
-					Routers: map[string]*dynamic.UDPRouter{
-						"default-test.route-0": {
-							EntryPoints: []string{"foo"},
-							Service:     "default-test.route-0",
+				{
+					desc:  "TCP ExternalName services disallowed",
+					paths: []string{"tcp/services.yml", "tcp/with_externalname_with_port.yml"},
+					expected: &dynamic.Configuration{
+						UDP: &dynamic.UDPConfiguration{
+							Routers:  map[string]*dynamic.UDPRouter{},
+							Services: map[string]*dynamic.UDPService{},
 						},
+						TCP: &dynamic.TCPConfiguration{
+							// The router that references the invalid service will be discarded.
+							Routers: map[string]*dynamic.TCPRouter{
+								"default-test.route-fdd3e9338e47a45efefc": {
+									EntryPoints: []string{"foo"},
+									Service:     "default-test.route-fdd3e9338e47a45efefc",
+									Rule:        "HostSNI(`foo.com`)",
+								},
+							},
+							Middlewares: map[string]*dynamic.TCPMiddleware{},
+							Services:    map[string]*dynamic.TCPService{},
+						},
+						HTTP: &dynamic.HTTPConfiguration{
+							ServersTransports: map[string]*dynamic.ServersTransport{},
+							Routers:           map[string]*dynamic.Router{},
+							Middlewares:       map[string]*dynamic.Middleware{},
+							Services:          map[string]*dynamic.Service{},
+						},
+						TLS: &dynamic.TLSConfiguration{},
 					},
-					Services: map[string]*dynamic.UDPService{},
 				},
-				TCP: &dynamic.TCPConfiguration{
-					Routers:     map[string]*dynamic.TCPRouter{},
-					Middlewares: map[string]*dynamic.TCPMiddleware{},
-					Services:    map[string]*dynamic.TCPService{},
+				{
+					desc:                     "UDP ExternalName services allowed",
+					paths:                    []string{"udp/services.yml", "udp/with_externalname_service.yml"},
+					allowExternalNameService: true,
+					expected: &dynamic.Configuration{
+						UDP: &dynamic.UDPConfiguration{
+							Routers: map[string]*dynamic.UDPRouter{
+								"default-test.route-0": {
+									EntryPoints: []string{"foo"},
+									Service:     "default-test.route-0",
+								},
+							},
+							Services: map[string]*dynamic.UDPService{
+								"default-test.route-0": {
+									LoadBalancer: &dynamic.UDPServersLoadBalancer{
+										Servers: []dynamic.UDPServer{
+											{
+												Address: "external.domain:80",
+												Port:    "",
+											},
+										},
+									},
+								},
+							},
+						},
+						HTTP: &dynamic.HTTPConfiguration{
+							ServersTransports: map[string]*dynamic.ServersTransport{},
+							Routers:           map[string]*dynamic.Router{},
+							Middlewares:       map[string]*dynamic.Middleware{},
+							Services:          map[string]*dynamic.Service{},
+						},
+						TCP: &dynamic.TCPConfiguration{
+							Routers:     map[string]*dynamic.TCPRouter{},
+							Middlewares: map[string]*dynamic.TCPMiddleware{},
+							Services:    map[string]*dynamic.TCPService{},
+						},
+						TLS: &dynamic.TLSConfiguration{},
+					},
 				},
-				HTTP: &dynamic.HTTPConfiguration{
-					ServersTransports: map[string]*dynamic.ServersTransport{},
-					Routers:           map[string]*dynamic.Router{},
-					Middlewares:       map[string]*dynamic.Middleware{},
-					Services:          map[string]*dynamic.Service{},
-				},
-				TLS: &dynamic.TLSConfiguration{},
-			},
-		},
+				{
+					desc:  "UDP ExternalName service disallowed",
+					paths: []string{"udp/services.yml", "udp/with_externalname_service.yml"},
+					expected: &dynamic.Configuration{
+						// The router that references the invalid service will be discarded.
+						UDP: &dynamic.UDPConfiguration{
+							Routers: map[string]*dynamic.UDPRouter{
+								"default-test.route-0": {
+									EntryPoints: []string{"foo"},
+									Service:     "default-test.route-0",
+								},
+							},
+							Services: map[string]*dynamic.UDPService{},
+						},
+						TCP: &dynamic.TCPConfiguration{
+							Routers:     map[string]*dynamic.TCPRouter{},
+							Middlewares: map[string]*dynamic.TCPMiddleware{},
+							Services:    map[string]*dynamic.TCPService{},
+						},
+						HTTP: &dynamic.HTTPConfiguration{
+							ServersTransports: map[string]*dynamic.ServersTransport{},
+							Routers:           map[string]*dynamic.Router{},
+							Middlewares:       map[string]*dynamic.Middleware{},
+							Services:          map[string]*dynamic.Service{},
+						},
+						TLS: &dynamic.TLSConfiguration{},
+					},
+				},*/
 	}
 
 	for _, test := range testCases {
@@ -5175,12 +5177,20 @@ func TestExternalNameService(t *testing.T) {
 
 			stopCh := make(chan struct{})
 
-			eventCh, err := client.WatchAll([]string{"default", "cross-ns"}, stopCh)
+			eventCh, err := client.WatchAll([]string{"default", "apiservice"}, stopCh)
 			require.NoError(t, err)
 
-			if k8sObjects != nil || crdObjects != nil {
-				// just wait for the first event
-				<-eventCh
+			svc, b, e := client.GetService("apiservice", "redis-cluster-extenal")
+			if e != nil {
+				log.Fatal(e)
+			} else if svc == nil {
+				log.Println(b)
+			} else {
+				log.Println(svc.Name, b)
+			}
+
+			for true {
+				fmt.Println(<-eventCh)
 			}
 
 			p := Provider{AllowExternalNameServices: test.allowExternalNameService}
